@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ambiguity Gym</title>
+<style>
+  :root {
+    --ink: #1b1d21; --muted: #6b7280; --line: #d8dbe0;
+    --ground: #f7f7f5; --card: #ffffff; --accent: #1f5f4e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink);
+         font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 28px; font-size: 14px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+            padding: 18px 20px; margin-bottom: 16px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .07em;
+       color: var(--muted); margin: 0 0 4px; font-weight: 600; }
+  .why { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+  label { display: block; font-size: 13px; font-weight: 500; margin: 12px 0 4px; }
+  select, input { width: 100%; padding: 8px 10px; font: inherit;
+                  border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  button { padding: 8px 16px; font: inherit; border-radius: 6px; cursor: pointer;
+           border: 1px solid var(--line); background: #fff; color: var(--ink); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #log { background: #14161a; color: #d7dbe0; border-radius: 8px; padding: 14px 16px;
+         font: 12px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+         min-height: 90px; white-space: pre-wrap; overflow-x: auto; }
+  #log:empty::before { content: "no interactions yet"; color: #6b7280; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Ambiguity Gym</h1>
+  <p class="sub">Every control here is deliberately ambiguous, so the agent has to stop and ask.
+     What it asks — and with which reason — is the thing under test.</p>
+
+  <section>
+    <h2>1 &middot; data</h2>
+    <p class="why">Three things are called Hyderabad. Only a person knows which was meant.</p>
+    <label for="departure">Departure</label>
+    <select id="departure" name="departure">
+      <option value="">Select a departure point</option>
+      <option value="city">Hyderabad, Telangana (City)</option>
+      <option value="air">Hyderabad — Rajiv Gandhi Intl (HYD)</option>
+      <option value="rail">Hyderabad Deccan Railway Station (HYB)</option>
+      <option value="pune">Pune, Maharashtra (City)</option>
+    </select>
+  </section>
+
+  <section>
+    <h2>2 &middot; locator</h2>
+    <p class="why">Four buttons read Continue. Nothing on the page says which one advances the booking.</p>
+    <div class="row">
+      <button id="continue-a">Continue</button>
+      <button id="continue-b">Continue</button>
+      <button id="continue-c" class="primary">Continue</button>
+      <button id="continue-d">Continue</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>3 &middot; input</h2>
+    <p class="why">Values nobody supplied. The agent must not invent them.</p>
+    <label for="booking-ref">Booking reference</label>
+    <input id="booking-ref" name="bookingRef" placeholder="e.g. ABC123" autocomplete="off">
+    <label for="dob">Passenger date of birth</label>
+    <input id="dob" name="dob" type="date">
+    <label for="ffn">Frequent flyer number</label>
+    <input id="ffn" name="ffn" placeholder="e.g. QF1234567" autocomplete="off">
+  </section>
+
+  <section>
+    <h2>4 &middot; missing</h2>
+    <p class="why">There is no "random world text" anywhere on this page, and no near-miss to tempt a
+       wrong click. Asking for it must produce reason <code>missing</code> with no options —
+       which is what offers "Record it".</p>
+  </section>
+
+  <section>
+    <h2>5 &middot; record it</h2>
+    <p class="why">A drag handle with no accessible name and no click target. The agent cannot do
+       this; a person demonstrates it while the recorder watches.</p>
+    <div id="slider" style="height:34px;border:1px solid var(--line);border-radius:6px;
+         background:linear-gradient(90deg,#eef2f1,#fff);position:relative;cursor:grab">
+      <div id="knob" style="position:absolute;left:2px;top:2px;width:28px;height:28px;
+           border-radius:5px;background:var(--accent)"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Interaction log</h2>
+    <div id="log"></div>
+  </section>
+</main>
+
+<script>
+  const log = document.getElementById('log');
+  const say = (line) => {
+    const at = new Date().toLocaleTimeString();
+    log.textContent += `[${at}] ${line}\n`;
+  };
+
+  document.getElementById('departure').addEventListener('change', (e) => {
+    const label = e.target.selectedOptions[0].textContent;
+    say(`Departure = ${e.target.value ? label : '(cleared)'}`);
+  });
+
+  document.querySelectorAll('button[id^="continue-"]').forEach((b) => {
+    b.addEventListener('click', () => say(`Clicked ${b.id}`));
+  });
+
+  ['booking-ref', 'dob', 'ffn'].forEach((id) => {
+    document.getElementById(id).addEventListener('change', (e) => {
+      say(`${id} = ${e.target.value || '(empty)'}`);
+    });
+  });
+
+  // Drag-only control: no click handler on purpose, so clicking it achieves nothing.
+  const slider = document.getElementById('slider');
+  const knob = document.getElementById('knob');
+  let dragging = false;
+  knob.addEventListener('mousedown', () => { dragging = true; slider.style.cursor = 'grabbing'; });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    slider.style.cursor = 'grab';
+    say(`Slider released at ${Math.round(parseInt(knob.style.left || 2, 10))}px`);
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const box = slider.getBoundingClientRect();
+    const x = Math.min(Math.max(e.clientX - box.left - 14, 2), box.width - 30);
+    knob.style.left = `${x}px`;
+  });
+</script>
+</body>
+</html>
