@@ -8,13 +8,15 @@
   :root {
     --ink: #1b1d21; --muted: #6b7280; --line: #d8dbe0;
     --ground: #f7f7f5; --card: #ffffff; --accent: #1f5f4e;
+    --warn: #8a5300; --bad: #a3271c;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--ground); color: var(--ink);
          font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
   main { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; }
   h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -0.01em; }
-  .sub { color: var(--muted); margin: 0 0 28px; font-size: 14px; }
+  .sub { color: var(--muted); margin: 0 0 10px; font-size: 14px; }
+  .toolbar { display:flex; gap:8px; align-items:center; margin: 0 0 24px; }
   section { background: var(--card); border: 1px solid var(--line); border-radius: 8px;
             padding: 18px 20px; margin-bottom: 16px; }
   h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .07em;
@@ -27,9 +29,23 @@
   button { padding: 8px 16px; font: inherit; border-radius: 6px; cursor: pointer;
            border: 1px solid var(--line); background: #fff; color: var(--ink); }
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button[disabled] { opacity: .45; cursor: not-allowed; }
+  .note { font-size:12px; color: var(--muted); margin-top:10px; }
+  .bad { color: var(--bad); font-size: 13px; margin-top: 10px; }
+  .ok { color: var(--accent); font-size: 13px; margin-top: 10px; }
+  .hidden { display: none; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+  @media (max-width:560px){ .grid2 { grid-template-columns:1fr; } }
+  .scroller { max-height: 230px; overflow-y: auto; border:1px solid var(--line);
+              border-radius:6px; margin-top:12px; }
+  .scroller table { width:100%; border-collapse:collapse; font-size:13px; }
+  .scroller td { padding:7px 10px; border-bottom:1px solid var(--line); }
+  .scroller tr:last-child td { border-bottom:0; }
+  .scroller button { padding:3px 10px; font-size:12px; }
+  code { background:#eef0f2; padding:1px 5px; border-radius:4px; font-size:12.5px; }
   #log { background: #14161a; color: #d7dbe0; border-radius: 8px; padding: 14px 16px;
          font: 12px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
-         min-height: 90px; white-space: pre-wrap; overflow-x: auto; }
+         min-height: 90px; max-height: 240px; overflow:auto; white-space: pre-wrap; }
   #log:empty::before { content: "no interactions yet"; color: #6b7280; }
 </style>
 </head>
@@ -38,6 +54,10 @@
   <h1>Ambiguity Gym</h1>
   <p class="sub">Every control here is deliberately ambiguous, so the agent has to stop and ask.
      What it asks — and with which reason — is the thing under test.</p>
+  <div class="toolbar">
+    <button id="reset">Reset gym</button>
+    <span class="note" id="resetnote">state is per page load</span>
+  </div>
 
   <section>
     <h2>1 &middot; data</h2>
@@ -93,6 +113,108 @@
   </section>
 
   <section>
+    <h2>6 &middot; many choices</h2>
+    <p class="why">Twelve near-identical fares. Forces a question with more options than fit
+       comfortably — use this to test long choice lists and keyboard navigation.</p>
+    <label for="fare">Fare class</label>
+    <select id="fare" name="fare">
+      <option value="">Select a fare</option>
+      <option value="f01">Economy Saver</option>
+      <option value="f02">Economy Saver Plus</option>
+      <option value="f03">Economy Flex</option>
+      <option value="f04">Economy Flex Plus</option>
+      <option value="f05">Premium Saver</option>
+      <option value="f06">Premium Saver Plus</option>
+      <option value="f07">Premium Flex</option>
+      <option value="f08">Premium Flex Plus</option>
+      <option value="f09">Business Saver</option>
+      <option value="f10">Business Flex</option>
+      <option value="f11">First Saver</option>
+      <option value="f12">First Flex</option>
+    </select>
+  </section>
+
+  <section>
+    <h2>7 &middot; many fields</h2>
+    <p class="why">One instruction ("fill the passenger address") has to become several actions.
+       Use this to check that sub-actions appear one by one under a single step.</p>
+    <div class="grid2">
+      <div>
+        <label for="addr1">Address line 1</label>
+        <input id="addr1" name="addr1" autocomplete="off">
+      </div>
+      <div>
+        <label for="addr2">Address line 2</label>
+        <input id="addr2" name="addr2" autocomplete="off">
+      </div>
+      <div>
+        <label for="city">City</label>
+        <input id="city" name="city" autocomplete="off">
+      </div>
+      <div>
+        <label for="postcode">Postcode</label>
+        <input id="postcode" name="postcode" autocomplete="off">
+      </div>
+      <div>
+        <label for="country">Country</label>
+        <input id="country" name="country" autocomplete="off">
+      </div>
+      <div>
+        <label for="phone">Contact phone</label>
+        <input id="phone" name="phone" autocomplete="off">
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>8 &middot; slow</h2>
+    <p class="why">The seat map button does not exist for the first 8 seconds. Tests waiting,
+       retrying, and what the panel shows while nothing is happening.</p>
+    <div class="row" id="slow-slot">
+      <span class="note" id="slow-pending">seat map loading&hellip;</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>9 &middot; flaky</h2>
+    <p class="why">Fails the first two attempts with a visible error, succeeds on the third.
+       Tests retry behaviour and what a mid-run failure looks like.</p>
+    <div class="row">
+      <button id="hold-fare">Hold this fare</button>
+    </div>
+    <div id="hold-msg" class="bad hidden"></div>
+  </section>
+
+  <section>
+    <h2>10 &middot; gated</h2>
+    <p class="why">Payment is disabled until the terms box is ticked. Tests preconditions — the
+       agent must notice the gate rather than report a dead end.</p>
+    <div class="row" style="align-items:center">
+      <label style="margin:0;display:flex;gap:8px;align-items:center;font-weight:400">
+        <input type="checkbox" id="terms" style="width:auto" > I accept the fare conditions
+      </label>
+    </div>
+    <div class="row">
+      <button id="pay" class="primary" disabled>Pay now</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>11 &middot; long list</h2>
+    <p class="why">Forty passengers, all similar. Use with a step per row to produce a long run —
+       for scroll, "go to bottom", and long-transcript testing.</p>
+    <div class="scroller" id="pax"></div>
+  </section>
+
+  <section>
+    <h2>12 &middot; onward</h2>
+    <p class="why">A second page, for navigation and re-grounding steps.</p>
+    <div class="row">
+      <a href="page2.html" id="to-page2">Go to seat selection</a>
+    </div>
+  </section>
+
+  <section>
     <h2>Interaction log</h2>
     <div id="log"></div>
   </section>
@@ -103,6 +225,7 @@
   const say = (line) => {
     const at = new Date().toLocaleTimeString();
     log.textContent += `[${at}] ${line}\n`;
+    log.scrollTop = log.scrollHeight;
   };
 
   document.getElementById('departure').addEventListener('change', (e) => {
@@ -110,17 +233,23 @@
     say(`Departure = ${e.target.value ? label : '(cleared)'}`);
   });
 
+  document.getElementById('fare').addEventListener('change', (e) => {
+    const label = e.target.selectedOptions[0].textContent;
+    say(`Fare = ${e.target.value ? label : '(cleared)'}`);
+  });
+
   document.querySelectorAll('button[id^="continue-"]').forEach((b) => {
     b.addEventListener('click', () => say(`Clicked ${b.id}`));
   });
 
-  ['booking-ref', 'dob', 'ffn'].forEach((id) => {
-    document.getElementById(id).addEventListener('change', (e) => {
-      say(`${id} = ${e.target.value || '(empty)'}`);
+  ['booking-ref', 'dob', 'ffn', 'addr1', 'addr2', 'city', 'postcode', 'country', 'phone']
+    .forEach((id) => {
+      document.getElementById(id).addEventListener('change', (e) => {
+        say(`${id} = ${e.target.value || '(empty)'}`);
+      });
     });
-  });
 
-  // Drag-only control: no click handler on purpose, so clicking it achieves nothing.
+  // 5 - drag-only control: no click handler on purpose.
   const slider = document.getElementById('slider');
   const knob = document.getElementById('knob');
   let dragging = false;
@@ -137,6 +266,87 @@
     const x = Math.min(Math.max(e.clientX - box.left - 14, 2), box.width - 30);
     knob.style.left = `${x}px`;
   });
+
+  // 8 - slow control: appears after 8s.
+  let slowTimer = null;
+  function armSlow() {
+    const slot = document.getElementById('slow-slot');
+    slot.innerHTML = '<span class="note" id="slow-pending">seat map loading&hellip;</span>';
+    clearTimeout(slowTimer);
+    slowTimer = setTimeout(() => {
+      slot.innerHTML = '<button id="seat-map">Open seat map</button>';
+      document.getElementById('seat-map').addEventListener('click', () => say('Clicked seat-map'));
+      say('seat-map button appeared');
+    }, 8000);
+  }
+
+  // 9 - flaky control: fails twice, then succeeds.
+  let holdAttempts = 0;
+  const holdMsg = document.getElementById('hold-msg');
+  document.getElementById('hold-fare').addEventListener('click', () => {
+    holdAttempts += 1;
+    if (holdAttempts < 3) {
+      holdMsg.className = 'bad';
+      holdMsg.textContent = `Could not hold the fare (attempt ${holdAttempts} of 3). Please try again.`;
+      say(`hold-fare FAILED, attempt ${holdAttempts}`);
+    } else {
+      holdMsg.className = 'ok';
+      holdMsg.textContent = 'Fare held for 20 minutes.';
+      say(`hold-fare SUCCEEDED on attempt ${holdAttempts}`);
+    }
+  });
+
+  // 10 - gated control.
+  const terms = document.getElementById('terms');
+  const pay = document.getElementById('pay');
+  terms.addEventListener('change', () => {
+    pay.disabled = !terms.checked;
+    say(`terms = ${terms.checked ? 'accepted' : 'cleared'}; pay ${pay.disabled ? 'disabled' : 'enabled'}`);
+  });
+  pay.addEventListener('click', () => say('Clicked pay'));
+
+  // 11 - long list of similar rows.
+  const NAMES = ['Alvarez','Bennett','Chandra','Dulal','Ebrahim','Farooq','Gupta','Hansen',
+                 'Iyer','Jain','Kowalski','Lim','Mehta','Nair','Okafor','Pillai','Quadri',
+                 'Rao','Silva','Tan'];
+  const pax = document.getElementById('pax');
+  function buildPax() {
+    const rows = [];
+    for (let i = 1; i <= 40; i++) {
+      const n = NAMES[(i - 1) % NAMES.length];
+      const id = String(i).padStart(2, '0');
+      rows.push(`<tr><td>Passenger ${id}</td><td>${n}</td>` +
+                `<td style="text-align:right"><button id="pax-${id}">Check in</button></td></tr>`);
+    }
+    pax.innerHTML = `<table><tbody>${rows.join('')}</tbody></table>`;
+    pax.querySelectorAll('button[id^="pax-"]').forEach((b) => {
+      b.addEventListener('click', () => {
+        b.textContent = 'Checked in';
+        b.disabled = true;
+        say(`Checked in ${b.id}`);
+      });
+    });
+  }
+
+  document.getElementById('reset').addEventListener('click', () => {
+    document.querySelectorAll('input').forEach((i) => {
+      if (i.type === 'checkbox') i.checked = false; else i.value = '';
+    });
+    document.getElementById('departure').value = '';
+    document.getElementById('fare').value = '';
+    pay.disabled = true;
+    holdAttempts = 0;
+    holdMsg.className = 'hidden';
+    holdMsg.textContent = '';
+    knob.style.left = '2px';
+    log.textContent = '';
+    buildPax();
+    armSlow();
+    say('gym reset');
+  });
+
+  buildPax();
+  armSlow();
 </script>
 </body>
 </html>

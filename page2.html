@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seat Selection &middot; Ambiguity Gym</title>
+<style>
+  :root { --ink:#1b1d21; --muted:#6b7280; --line:#d8dbe0; --ground:#f7f7f5;
+          --card:#fff; --accent:#1f5f4e; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+         font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:32px 20px 64px; }
+  h1 { font-size:22px; margin:0 0 4px; letter-spacing:-.01em; }
+  .sub { color:var(--muted); margin:0 0 28px; font-size:14px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:8px;
+            padding:18px 20px; margin-bottom:16px; }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted);
+       margin:0 0 4px; font-weight:600; }
+  .why { color:var(--muted); font-size:13px; margin:0 0 14px; }
+  .seats { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-top:12px; }
+  .seats button { padding:10px 0; font:inherit; border:1px solid var(--line);
+                  border-radius:6px; background:#fff; cursor:pointer; }
+  .seats button[disabled] { opacity:.4; cursor:not-allowed; }
+  .seats button.sel { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; align-items:center; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff;
+                   padding:8px 16px; font:inherit; border-radius:6px; cursor:pointer;
+                   border:1px solid var(--accent); }
+  a { color:var(--accent); }
+  #log { background:#14161a; color:#d7dbe0; border-radius:8px; padding:14px 16px;
+         font:12px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+         min-height:70px; white-space:pre-wrap; }
+  #log:empty::before { content:"no interactions yet"; color:#6b7280; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Seat selection</h1>
+  <p class="sub">Page two. Reaching this page is itself the thing under test — use it for
+     navigation, re-grounding, and "verify the page changed" steps.</p>
+
+  <section>
+    <h2>a &middot; landed</h2>
+    <p class="why">A marker string that exists only on this page, so a verification step can prove
+       the agent really arrived.</p>
+    <p id="marker" style="font-size:17px;font-weight:600;margin:0">Seat selection is open</p>
+  </section>
+
+  <section>
+    <h2>b &middot; ambiguous seats</h2>
+    <p class="why">Every free seat is labelled the same way. Picking "a window seat" needs a person.</p>
+    <div class="seats" id="seats"></div>
+  </section>
+
+  <section>
+    <h2>c &middot; back</h2>
+    <p class="why">Return leg, for a second navigation in one run.</p>
+    <div class="row">
+      <a href="index.html" id="to-page1">Back to booking</a>
+      <button class="primary" id="confirm-seats">Confirm seats</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Interaction log</h2>
+    <div id="log"></div>
+  </section>
+</main>
+
+<script>
+  const log = document.getElementById('log');
+  const say = (l) => { log.textContent += `[${new Date().toLocaleTimeString()}] ${l}\n`; };
+
+  const seats = document.getElementById('seats');
+  const ROWS = ['A','B','C','D'];
+  let html = '';
+  ROWS.forEach((r) => {
+    for (let c = 1; c <= 6; c++) {
+      const id = `seat-${r}${c}`;
+      const taken = (c === 3 || c === 4) && (r === 'B' || r === 'C');
+      html += `<button id="${id}" ${taken ? 'disabled' : ''}>${r}${c}</button>`;
+    }
+  });
+  seats.innerHTML = html;
+  seats.querySelectorAll('button:not([disabled])').forEach((b) => {
+    b.addEventListener('click', () => {
+      b.classList.toggle('sel');
+      say(`${b.classList.contains('sel') ? 'Selected' : 'Cleared'} ${b.id}`);
+    });
+  });
+  document.getElementById('confirm-seats').addEventListener('click', () => {
+    const picked = [...seats.querySelectorAll('.sel')].map((b) => b.textContent).join(', ');
+    say(picked ? `Confirmed seats: ${picked}` : 'Confirmed with no seats selected');
+  });
+</script>
+</body>
+</html>
